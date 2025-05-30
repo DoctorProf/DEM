@@ -4,12 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DEM.Utils
+namespace DEM.ViewModel
 {
-    public enum Status
+    public class OrderCardLogic
     {
-        Created = 0,
-        InProgress = 1,
-        Completed = 2
     }
 }

@@ -8,7 +8,8 @@ namespace DEM.Utils
 {
     public enum Role
     {
-        Admin = 1,
-        Manager = 2
+        Admin = 0,
+        Manager = 1,
+        Client = 2
     }
 }
