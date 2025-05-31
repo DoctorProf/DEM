@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using DEM.View.Pages;
+using DEM.Utils;
 
 namespace DEM.View.WIndows
 {
@@ -27,8 +28,8 @@ namespace DEM.View.WIndows
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Utils.UtilsProperties.CurrentFrame = MainFrame;
-            Utils.UtilsProperties.CurrentFrame.Navigate(new Auth());
+            UtilsProperties.CurrentFrame = MainFrame;
+            UtilsProperties.CurrentFrame.Navigate(new AuthPage());
         }
     }
 }

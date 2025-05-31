@@ -1,4 +1,5 @@
-﻿using DEM.ViewModel;
+﻿using DEM.Utils;
+using DEM.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +20,11 @@ namespace DEM.View.Pages
     /// <summary>
     /// Логика взаимодействия для Auth.xaml
     /// </summary>
-    public partial class Auth : Page
+    public partial class AuthPage : Page
     {
         public AuthLogic AuthLogic { get; set; }
 
-        public Auth()
+        public AuthPage()
         {
             InitializeComponent();
             AuthLogic = new AuthLogic();
@@ -32,8 +33,16 @@ namespace DEM.View.Pages
         private void Login_Click(object sender, RoutedEventArgs e)
         {
             string username = Username.Text.Trim();
-            string password = Password.Password.Trim();
-            AuthLogic.Login(username, password);
+            string password = Password.Password;
+
+            if (AuthLogic.Login(username, password, out string error))
+            {
+                UtilsProperties.CurrentFrame.Navigate(new MainPage());
+            }
+            else
+            {
+                MessageBox.Show(error);
+            }
         }
     }
 }

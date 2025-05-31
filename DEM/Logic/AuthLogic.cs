@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
+using DEM.Utils;
 
 namespace DEM.ViewModel
 {
@@ -25,8 +26,10 @@ namespace DEM.ViewModel
             return string.Concat(bytes.Select(b => b.ToString("x2")));
         }
 
-        public void Login(string username, string password)
+        public bool Login(string username, string password, out string errorMessage)
         {
+            errorMessage = string.Empty;
+
             string hash = Sha256(password);
             using (var context = new DataBaseContext())
             {
@@ -35,12 +38,13 @@ namespace DEM.ViewModel
 
                 if (user != null)
                 {
-                    Utils.UtilsProperties.CurrentUser = user;
-                    Utils.UtilsProperties.CurrentFrame.Navigate(new Main());
+                    UtilsProperties.CurrentUser = user;
+                    return true;
                 }
                 else
                 {
-                    MessageBox.Show("Неверный логин и/или пароль");
+                    errorMessage = "Неверный логин и/или пароль.";
+                    return false;
                 }
             }
         }
