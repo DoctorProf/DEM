@@ -1,19 +1,9 @@
-﻿using DEM.Utils;
-using DEM.ViewModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using DEM.DataBase;
+using DEM.Utils;
+using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DEM.View.Pages
 {
@@ -22,26 +12,36 @@ namespace DEM.View.Pages
     /// </summary>
     public partial class AuthPage : Page
     {
-        public AuthLogic AuthLogic { get; set; }
-
         public AuthPage()
         {
             InitializeComponent();
-            AuthLogic = new AuthLogic();
+        }
+
+        private string Sha256(string text)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(text));
+            return string.Concat(bytes.Select(b => b.ToString("x2")));
         }
 
         private void Login_Click(object sender, RoutedEventArgs e)
         {
-            string username = Username.Text.Trim();
-            string password = Password.Password;
+            var context = new DataBaseContext();
 
-            if (AuthLogic.Login(username, password, out string error))
+            string username = Username.Text.Trim();
+            string password = Password.Password.Trim();
+
+            string hash = Sha256(password);
+            var user = context.Users.FirstOrDefault(u => u.Username == username && u.PasswordHash == hash);
+
+            if (user != null)
             {
+                UtilsProperties.CurrentUser = user;
                 UtilsProperties.CurrentFrame.Navigate(new MainPage());
             }
             else
             {
-                MessageBox.Show(error);
+                MessageBox.Show("Неверный логин и/или пароль.");
             }
         }
     }

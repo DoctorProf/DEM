@@ -1,21 +1,8 @@
 ﻿using DEM.DataBase;
 using DEM.DataBase.models;
-using DEM.Logic;
 using DEM.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DEM.View.Pages
 {
@@ -24,34 +11,60 @@ namespace DEM.View.Pages
     /// </summary>
     public partial class ItemCardPage : Page
     {
-        public ItemCardLogic ItemCardLogic { get; set; }
+        public Order Order { get; set; }
 
         public ItemCardPage(Order order)
         {
             InitializeComponent();
-            ItemCardLogic = new ItemCardLogic(order);
             using (var context = new DataBaseContext())
             {
                 Item.ItemsSource = context.Products.ToList();
             }
+            Order = order;
         }
 
         private void Add_Click(object sender, RoutedEventArgs e)
         {
-            if (ItemCardLogic.Add((int)Item.SelectedValue, Quantity.Text, Price.Text, out string error))
+            var context = new DataBaseContext();
+            int productId = (int)Item.SelectedValue;
+            string quantityStr = Quantity.Text.Trim();
+            string priceStr = Price.Text.Trim();
+
+            if (!int.TryParse(quantityStr.Trim(), out int quantity))
             {
-                if (UtilsProperties.CurrentFrame.CanGoBack)
-                {
-                    UtilsProperties.CurrentFrame.GoBack();
-                }
-                else
-                {
-                    MessageBox.Show("Нельзя вернуться назад.");
-                }
+                MessageBox.Show("Введите корректное количество (целое число).");
+                return;
+            }
+
+            if (!decimal.TryParse(priceStr.Trim(), out decimal price))
+            {
+                MessageBox.Show("Введите корректную цену.");
+                return;
+            }
+
+            var product = context.Products.FirstOrDefault(p => p.Id == productId);
+            if (product == null)
+            {
+                MessageBox.Show("Товар не найден.");
+                return;
+            }
+
+            var orderItem = new OrderItem
+            {
+                Order = Order,
+                Product = product,
+                Quantity = quantity,
+                Price = price
+            };
+
+            Order.OrderItems.Add(orderItem);
+            if (UtilsProperties.CurrentFrame.CanGoBack)
+            {
+                UtilsProperties.CurrentFrame.GoBack();
             }
             else
             {
-                MessageBox.Show(error);
+                MessageBox.Show("Нельзя вернуться назад.");
             }
         }
     }

@@ -1,23 +1,8 @@
 ﻿using DEM.DataBase;
 using DEM.DataBase.models;
 using DEM.Utils;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using DEM.View.Pages;
-using DEM.ViewModel;
 
 namespace DEM.View.Pages
 {
@@ -26,7 +11,8 @@ namespace DEM.View.Pages
     /// </summary>
     public partial class OrderCardPage : Page
     {
-        public OrderCardLogic OrderCardLogic { get; set; }
+        public Order Order { get; set; }
+        public bool Change { get; set; }
 
         public OrderCardPage()
         {
@@ -36,29 +22,21 @@ namespace DEM.View.Pages
                 Partner.ItemsSource = context.Partners.ToList();
                 Status.ItemsSource = Enum.GetValues(typeof(Status)).Cast<Status>();
             }
-            if (OrderCardLogic == null)
-            {
-                OrderCardLogic = new OrderCardLogic(new Order());
-            }
-            else
-            {
-                var order = OrderCardLogic.Order;
-                Partner.SelectedValue = order.Partner?.Id;
-                Status.SelectedValue = order.Status;
-                OrderDate.SelectedDate = order.OrderDate;
-            }
+            Change = false;
+            Order = new Order();
+            Order.OrderItems = new List<OrderItem>();
         }
 
         public OrderCardPage(Order order)
         {
             InitializeComponent();
+            Order = order;
             using (var context = new DataBaseContext())
             {
                 Partner.ItemsSource = context.Partners.ToList();
                 Status.ItemsSource = Enum.GetValues(typeof(Status)).Cast<Status>();
             }
-            OrderCardLogic = new OrderCardLogic(order);
-            OrderCardLogic.Change = true;
+            Change = true;
             Partner.SelectedValue = order.Partner?.Id;
             Status.SelectedValue = order.Status;
             OrderDate.SelectedDate = order.OrderDate;
@@ -66,24 +44,53 @@ namespace DEM.View.Pages
 
         private void AddItem_Click(object sender, RoutedEventArgs e)
         {
-            UtilsProperties.CurrentFrame.Navigate(new ItemCardPage(OrderCardLogic.Order));
+            UtilsProperties.CurrentFrame.Navigate(new ItemCardPage(Order));
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            var context = new DataBaseContext();
             int partnerId = (Partner.SelectedItem as Partner)?.Id ?? 0;
             Status selectedStatus = (Status)Status.SelectedItem;
             DateTime? selectedDate = OrderDate.SelectedDate;
 
-            if (OrderCardLogic.Save(partnerId, selectedStatus, selectedDate, out string error))
+            if (partnerId == 0)
             {
-                MessageBox.Show("Заказ сохранён.");
-                UtilsProperties.CurrentFrame.Navigate(new MainPage());
+                MessageBox.Show("Выберите партнёра.");
+                return;
+            }
+
+            if (!selectedDate.HasValue || selectedDate == DateTime.MinValue)
+            {
+                MessageBox.Show("Выберите корректную дату.");
+                return;
+            }
+            var partner = context.Partners.FirstOrDefault(p => p.Id == partnerId);
+            if (partner == null)
+            {
+                MessageBox.Show("Партнёр не найден в базе.");
+                return;
+            }
+
+            Order.Partner = partner;
+            Order.OrderDate = selectedDate.Value;
+            Order.Status = selectedStatus;
+
+            foreach (var item in Order.OrderItems)
+            {
+                item.Product = context.Products.FirstOrDefault(p => p.Id == item.Product.Id);
+            }
+
+            if (Change)
+            {
+                context.Orders.Update(Order);
             }
             else
             {
-                MessageBox.Show(error);
+                context.Orders.Add(Order);
             }
+            context.SaveChanges();
+            UtilsProperties.CurrentFrame.Navigate(new MainPage());
         }
     }
 }
